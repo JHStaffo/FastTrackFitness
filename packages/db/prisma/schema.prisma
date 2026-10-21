@@ -1,0 +1,335 @@
+// Fast Track Fitness data model.
+//
+// Design rules from the requirements spec:
+// - Points live in an append-only ledger (LedgerEntry). Corrections are new rows
+//   with a reason; nothing rewrites history (spec 9).
+// - Every imported record keeps its provider, source app/device and timestamps (spec 6).
+// - Health details stay out of anything leaderboards read (spec 8).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  EMPLOYEE
+  WELLNESS_ADMIN
+  SYSTEM_ADMIN
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Employee {
+  id                String           @id @default(cuid())
+  email             String           @unique
+  name              String
+  role              Role             @default(EMPLOYEE)
+  status            EmploymentStatus @default(ACTIVE)
+  enrolledFrom      DateTime         @db.Date
+  consentAcceptedAt DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  devices         Device[]
+  activities      ActivityRecord[]
+  manualEntries   ManualEntry[]
+  submissions     Submission[]       @relation("submittedBy")
+  reviews         Submission[]       @relation("reviewedBy")
+  ledger          LedgerEntry[]      @relation("ledgerEmployee")
+  ledgerCreated   LedgerEntry[]      @relation("ledgerCreatedBy")
+  awards          Award[]
+  allowance       AllowanceTransaction[]
+  exceptions      WearableException[]
+  auditEntries    AuditLog[]
+}
+
+enum DeviceProvider {
+  APPLE_HEALTH
+  FITBIT
+}
+
+enum DeviceStatus {
+  CONNECTED
+  SYNC_ERROR
+  DISCONNECTED
+}
+
+/// A linked wearable source. Replacing a device adds a new row; earned points stay in the ledger.
+model Device {
+  id               String         @id @default(cuid())
+  employeeId       String
+  provider         DeviceProvider
+  status           DeviceStatus   @default(CONNECTED)
+  /// Fitbit OAuth tokens, encrypted at the application layer before storage.
+  encryptedTokens  String?
+  lastSyncAt       DateTime?
+  lastSyncError    String?
+  connectedAt      DateTime       @default(now())
+  disconnectedAt   DateTime?
+
+  employee   Employee         @relation(fields: [employeeId], references: [id])
+  activities ActivityRecord[]
+
+  @@index([employeeId])
+}
+
+enum ActivityType {
+  STEPS
+  SLEEP
+  WORKOUT
+  WATER
+  WEIGHT
+}
+
+/// One imported sample from Apple Health or Fitbit.
+model ActivityRecord {
+  id            String       @id @default(cuid())
+  employeeId    String
+  deviceId      String
+  type          ActivityType
+  /// Steps, minutes, ounces or pounds depending on type.
+  value         Float
+  startAt       DateTime
+  endAt         DateTime
+  /// Company-time-zone date the record scores on (sleep: the wake-up date).
+  scoringDate   DateTime     @db.Date
+  /// Provider's own id, used to ignore re-imports of the same sample.
+  externalId    String
+  sourceApp     String?
+  sourceDevice  String?
+  /// True when the person typed it into the Health app by hand; does not earn points.
+  userEntered   Boolean      @default(false)
+  workoutKind   String?
+  importedAt    DateTime     @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  device   Device   @relation(fields: [deviceId], references: [id])
+
+  @@unique([deviceId, externalId])
+  @@index([employeeId, scoringDate])
+}
+
+/// Things wearables can't measure: meals, water, meal-plan confirmation.
+model ManualEntry {
+  id                String   @id @default(cuid())
+  employeeId        String
+  scoringDate       DateTime @db.Date
+  mealsLogged       Int      @default(0)
+  waterOz           Float    @default(0)
+  mealPlanConfirmed Boolean  @default(false)
+  confirmedAt       DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, scoringDate])
+}
+
+enum OtherCategory {
+  SELF_CARE
+  IN_BODY
+  EYE_DOCTOR
+  DENTIST
+  PRIMARY_CARE
+  WEIGH_IN
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A visit note or InBody sheet. Stores only what eligibility needs: no diagnoses or results.
+model Submission {
+  id           String           @id @default(cuid())
+  employeeId   String
+  category     OtherCategory
+  eventDate    DateTime         @db.Date
+  /// Storage key of the uploaded file; never shown on leaderboards.
+  documentKey  String?
+  /// InBody only: the two numbers the improvement rule needs.
+  bodyFatPct   Float?
+  muscleMassLb Float?
+  status       SubmissionStatus @default(PENDING)
+  reviewerId   String?
+  reviewedAt   DateTime?
+  rejectReason String?
+  appealOfId   String?
+  createdAt    DateTime         @default(now())
+
+  employee Employee  @relation("submittedBy", fields: [employeeId], references: [id])
+  reviewer Employee? @relation("reviewedBy", fields: [reviewerId], references: [id])
+
+  @@index([status])
+}
+
+enum LedgerKind {
+  DAILY
+  CAMPAIGN
+  OTHER
+  ADJUSTMENT
+  REVERSAL
+}
+
+/// Append-only. A balance or contest total is a sum over these rows.
+model LedgerEntry {
+  id             String     @id @default(cuid())
+  employeeId     String
+  scoringDate    DateTime   @db.Date
+  kind           LedgerKind
+  /// e.g. "steps", "dentist", or a campaign id.
+  category       String
+  points         Int
+  ruleSetVersion String
+  /// Ids of the records or submission that justify the points.
+  sourceIds      String[]
+  /// Required for ADJUSTMENT and REVERSAL.
+  reason         String?
+  createdById    String?
+  /// Points earned during the soft launch are tagged and excluded from official contests.
+  isTest         Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+
+  employee  Employee  @relation("ledgerEmployee", fields: [employeeId], references: [id])
+  createdBy Employee? @relation("ledgerCreatedBy", fields: [createdById], references: [id])
+
+  @@index([employeeId, scoringDate])
+}
+
+/// Versioned program rules (the RuleSet object from @ftf/scoring, stored as JSON).
+model RuleSetVersion {
+  id            String   @id @default(cuid())
+  version       String   @unique
+  effectiveFrom DateTime @db.Date
+  rules         Json
+  publishedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model Campaign {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  mode      String
+  points    Int
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  /// Rules must be visible before the campaign starts (spec 8).
+  publishedAt DateTime?
+}
+
+enum ContestTier {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum ContestStatus {
+  OPEN
+  CLOSING
+  WINNER_CONFIRMED
+}
+
+model Contest {
+  id          String        @id @default(cuid())
+  tier        ContestTier
+  periodKey   String
+  startDate   DateTime      @db.Date
+  endDate     DateTime      @db.Date
+  status      ContestStatus @default(OPEN)
+  /// Snapshot of standings, alternates and skip reasons at close.
+  results     Json?
+  confirmedAt DateTime?
+  confirmedBy String?
+  awards      Award[]
+
+  @@unique([tier, periodKey])
+}
+
+enum AwardType {
+  WEEKLY_GIFT_CARD
+  MONTHLY_PRIZE
+  QUARTERLY_PRIZE
+  ANNUAL_PRIZE
+}
+
+enum FulfillmentStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Award {
+  id          String            @id @default(cuid())
+  employeeId  String
+  type        AwardType
+  periodKey   String
+  amountUsd   Decimal           @db.Decimal(10, 2)
+  contestId   String?
+  status      FulfillmentStatus @default(PENDING)
+  providerRef String?
+  fulfilledAt DateTime?
+  createdAt   DateTime          @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  contest  Contest? @relation(fields: [contestId], references: [id])
+
+  @@unique([employeeId, type, periodKey])
+}
+
+enum AllowanceStatus {
+  REQUESTED
+  APPROVED
+  PAID
+  REJECTED
+}
+
+/// The $200 wearable or wellness-item allowance.
+model AllowanceTransaction {
+  id          String          @id @default(cuid())
+  employeeId  String
+  amountUsd   Decimal         @db.Decimal(10, 2)
+  description String
+  receiptKey  String?
+  method      String
+  status      AllowanceStatus @default(REQUESTED)
+  createdAt   DateTime        @default(now())
+  decidedAt   DateTime?
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+}
+
+/// Grace periods and exemptions for device failures, outages or medical reasons.
+model WearableException {
+  id         String   @id @default(cuid())
+  employeeId String
+  reason     String
+  startDate  DateTime @db.Date
+  endDate    DateTime @db.Date
+  approvedBy String
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+}
+
+/// Every admin action: approvals, adjustments, rule changes, winner decisions.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  actor Employee @relation(fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+}

@@ -1,0 +1,156 @@
+:root {
+  --red: #ed1c24;
+  --red-dark: #c4141b;
+  --blue: #034ea2;
+  --navy: #2c3e50;
+  --navy-dark: #1f2d3a;
+  --teal: #0076a3;
+  --gray: #777777;
+  --ink: #1d232a;
+  --muted: #5f6b76;
+  --line: #dde3e8;
+  --bg: #eef2f5;
+  --card: #ffffff;
+  --green: #1e8449;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+}
+h1, h2, h3, .brand-heading {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-weight: 500;
+  letter-spacing: .01em;
+  line-height: 1.2;
+  margin: 0 0 .6em;
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.1rem; }
+a { color: var(--blue); }
+p { margin: 0 0 1em; }
+
+/* Header */
+.topbar { background: #fff; border-bottom: 4px solid var(--red); }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.topbar img { height: 44px; display: block; }
+.topbar .app-name { font-family: "Oswald", sans-serif; text-transform: uppercase; color: var(--navy); font-size: 1.15rem; letter-spacing: .06em; }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; align-items: center; }
+.nav a, .nav button { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: .9rem; letter-spacing: .04em; color: var(--navy); text-decoration: none; padding: 8px 10px; border-radius: 8px; background: none; border: 0; cursor: pointer; }
+.nav a:hover, .nav button:hover { background: var(--bg); }
+.nav a.active { color: var(--teal); }
+
+/* Bands and layout */
+.band { background: var(--navy); color: #fff; }
+.band-inner { max-width: 1120px; margin: 0 auto; padding: 28px 16px; }
+.band h1 { margin: 0; }
+.band p { margin: .4em 0 0; color: #d5dde4; }
+main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.stack > * + * { margin-top: 16px; }
+
+.card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: 0 1px 2px rgba(20, 40, 60, .08); }
+.card-navy { background: var(--navy); color: #fff; }
+.card-teal { background: var(--teal); color: #fff; }
+.card h2 { margin-bottom: .5em; }
+
+.stat-label { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .05em; font-size: .85rem; color: var(--muted); }
+.stat-value { font-family: "Oswald", sans-serif; font-size: 2rem; color: var(--navy); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat-sub { color: var(--muted); font-size: .9rem; }
+
+/* Buttons and forms */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .05em; font-size: 1rem; padding: 10px 18px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; text-decoration: none; background: var(--red); color: #fff; }
+.btn:hover { background: var(--red-dark); }
+.btn-outline { background: transparent; border-color: currentColor; color: var(--navy); }
+.btn-outline:hover { background: var(--bg); }
+.btn-small { padding: 6px 12px; font-size: .85rem; }
+.btn-teal { background: var(--teal); }
+.btn-teal:hover { background: #005f84; }
+.btn-block { width: 100%; }
+.btn-big { font-size: 1.3rem; padding: 14px 28px; }
+
+label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+input[type=text], input[type=search], input[type=email], input[type=number], input[type=date], input[type=datetime-local], select, textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: #fff; color: var(--ink);
+}
+input:disabled { background: var(--bg); color: var(--muted); }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+.field { margin-bottom: 14px; }
+.field-row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+.error { color: var(--red); font-size: .9rem; margin-top: 4px; }
+.hint { color: var(--muted); font-size: .85rem; }
+
+
+
+/* Flash */
+.flash { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; }
+.flash-ok { background: #e3f4ea; color: #155c33; }
+.flash-error { background: #fde4e5; color: #8c1016; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th { text-align: left; font-family: "Oswald", sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; font-size: .8rem; color: var(--muted); padding: 8px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+.empty { color: var(--muted); padding: 12px 0; }
+
+.pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; background: var(--bg); color: var(--navy); white-space: nowrap; }
+.pill-red { background: #fde4e5; color: #a3121a; }
+.pill-green { background: #e3f4ea; color: #155c33; }
+.pill-teal { background: #dff1f8; color: #005f84; }
+
+
+
+
+/* Sign in */
+.auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: var(--navy); }
+.auth-card { width: 100%; max-width: 400px; background: #fff; border-radius: var(--radius); padding: 28px 24px; border-top: 6px solid var(--red); }
+.auth-card img { height: 56px; display: block; margin: 0 auto 12px; }
+.auth-card h1 { text-align: center; font-size: 1.5rem; color: var(--navy); }
+.code-input { font-size: 1.8rem !important; letter-spacing: .4em; text-align: center; font-variant-numeric: tabular-nums; }
+
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+details > summary { cursor: pointer; color: var(--blue); font-weight: 600; }
+.mt { margin-top: 16px; }
+.right { text-align: right; }
+
+.plain-list { list-style: none; padding: 0; margin: 0; }
+.plain-list li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+
+/* Wellness program */
+.progress { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; margin-top: 10px; }
+.progress span { display: block; height: 100%; background: var(--teal); border-radius: 5px; }
+.progress.done span { background: var(--green); }
+.week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
+.week-strip div { text-align: center; padding: 6px 0; border-radius: 8px; background: var(--bg); font-size: .8rem; color: var(--muted); }
+.week-strip strong { display: block; font-family: "Oswald", sans-serif; font-size: 1.1rem; color: var(--navy); font-weight: 500; }
+.week-strip .full { background: #dff1f8; }
+.week-strip .full strong { color: var(--teal); }
+.week-strip .today { outline: 2px solid var(--red); }
+.habit-list { list-style: none; padding: 0; margin: 0; }
+.habit-list li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.habit-list li:last-child { border-bottom: 0; }
+.habit-list .mark { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: .9rem; background: var(--bg); color: var(--muted); flex: none; }
+.habit-list .met .mark { background: var(--teal); color: #fff; }
+.habit-list .pts { margin-left: auto; font-family: "Oswald", sans-serif; color: var(--navy); font-variant-numeric: tabular-nums; }
+.habit-list .src { color: var(--muted); font-size: .8rem; }
+.band-stats { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 14px; }
+.band-stats .stat-label { color: #b9c6d2; }
+.band-stats .stat-value { color: #fff; }
+tr.me td { background: #f2f9fc; font-weight: 600; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tabs a { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: .9rem; padding: 6px 14px; border-radius: 999px; text-decoration: none; color: var(--navy); background: var(--card); }
+.tabs a.active { background: var(--navy); color: #fff; }
